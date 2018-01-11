@@ -4,15 +4,27 @@ Vue.use(Vuex)
 
 const rows = [
   {
-    title: '一、看拼音写汉字',
-    pinyin: 'ē é ě è ī í ǐ ì',
-    character: '这里是汉字'
+    title: '一、看拼音写词语',
+    pinyin: 'kàn pīn yīn xiě cí yǔ',
+    character: '看拼音写词语'
+  },
+  {
+    title: '二、反义词',
+    pinyin: 'rì  huǒ  dì  lái',
+    character: '日 火 地 来'
+  },
+  {
+    title: '三、组词',
+    pinyin: 'xuě  fēng',
+    character: '雪 风'
   }
 ]
+const col = 7
 const deepCopy = obj => JSON.parse(JSON.stringify(obj))
 // 初始化存储数据
 const state = {
-  rows
+  rows,
+  col
 }
 
 // 本地存储
@@ -24,31 +36,32 @@ Object.assign(state, JSON.parse(storage.getItem(storageKey)))
 
 // 通过插件订阅state的每一次更改，在更改的时候保存我们感兴趣的mutations
 const storagePlugin = store => {
-  store.subscribe((mutation, {dataLeft, dataRight, rows}) => {
-    storage.setItem(storageKey, JSON.stringify({dataLeft, dataRight, rows}))
+  store.subscribe((mutation, state) => {
+    storage.setItem(storageKey, JSON.stringify(state))
   })
 }
 
 const mutations = {
-  saveData (state, {dataLeft, dataRight}) {
-    Object.assign(state, {dataLeft, dataRight})
-  },
   rows (state, value) {
     state.rows = value
+  },
+  col (state, value) {
+    state.col = value
   }
 }
 const getters = {
   rows (state) {
     return state.rows
+  },
+  col (state) {
+    return state.col
   }
 }
 
 const actions = {
   restore ({commit}) {
     commit('rows', deepCopy(rows))
-  },
-  saveRows ({commit}, value) {
-    commit('rows', value)
+    commit('col', col)
   }
 }
 

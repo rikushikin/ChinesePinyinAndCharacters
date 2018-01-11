@@ -1,37 +1,52 @@
 <template>
   <div id="app">
     <div class="no-print" style="margin: 15px;">
-      <InputNumber :max="10" :min="6" v-model="col"></InputNumber> 列
+      <InputNumber :max="12" :min="6" v-model="col"></InputNumber> 列
       <Button @click="print" type="primary" icon="printer">打印</Button>
       <Button @click="restore" type="success" icon="ios-undo">初始化</Button>
       <Button shape="circle" icon="social-github" @click="github">Github</Button>
       <Button shape="circle" type="text">by zhijun.lu</Button>
     </div>
-    <div class="container" :style="style">
-      <div class="row" v-for="(row, index) of rows">
-        <Button type="error" shape="circle" class="no-print remove-button" :disabled="rows.length < 2" @click="rows.splice(index, 1)" icon="close">
-        </Button>
-        <div class="title" v-if="row.title" v-text="row.title"></div>
-        <div class="content">
-          <div class="item" v-for="i of cols" :key="i">
-            <div class="pinyin" v-if="row.pinyin" v-text="row.pinyin.split(' ')[i - 1]"></div>
-            <div class="character" v-text="row.character.split('')[i - 1]"></div>
-          </div>
-          <div class="clear"></div>
-        </div>
-        <div class="no-print row-operator">
-          <Input placeholder="" v-model="row.title">
-            <span slot="prepend">标题</span>
-          </Input>
-          <Input placeholder="" v-model="row.pinyin">
-            <span slot="prepend">拼音</span>
-          </Input>
-          <Input placeholder="" v-model="row.character">
-            <span slot="prepend">汉字</span>
-          </Input>
+    <div class="container" :style="style" v-if="rows.length" :class="{drag}">
+      <Draggable v-model="rows" :options="{handle: '.move-button'}" @start="drag = true" @end="drag = false">
+        <div class="row" v-for="(row, index) of rows">
           
+          <div class="title" v-if="row.title" v-text="row.title"></div>
+          <div class="content">
+            <Button
+              size="small"
+              shape="circle"
+              class="no-print move-button"
+              icon="arrow-move"></Button>
+            <Button
+              type="error"
+              size="small"
+              shape="circle"
+              class="no-print remove-button"
+              :disabled="rows.length < 2"
+              @click="rows.splice(index, 1)"
+              icon="close">
+          </Button>
+            <div class="item" v-for="i of cols" :key="i">
+              <div class="pinyin" v-if="row.pinyin" v-text="row.pinyin.split(' ')[i - 1]"></div>
+              <div class="character" v-text="row.character.split('')[i - 1]"></div>
+            </div>
+            <div class="clear"></div>
+          </div>
+          <div class="no-print row-operator">
+            <Input placeholder="" v-model="row.title">
+              <span slot="prepend">标题</span>
+            </Input>
+            <Input placeholder="" v-model="row.pinyin">
+              <span slot="prepend">拼音</span>
+            </Input>
+            <Input placeholder="" v-model="row.character">
+              <span slot="prepend">汉字</span>
+            </Input>
+            
+          </div>
         </div>
-      </div>
+      </Draggable>
       <div class="no-print" style="text-align: center;">
         <Button type="dashed" icon="plus" @click="rows.push({title: '', pinyin: '', character: ''})">再添加一行</Button>
       </div>
@@ -40,10 +55,12 @@
 </template>
 
 <script type="text/javascript">
+import Draggable from 'vuedraggable'
 export default {
   data () {
     return {
-      col: 7,
+      drag: false,
+      col: 4,
       rows: []
     }
   },
@@ -78,16 +95,21 @@ export default {
     },
     init () {
       this.rows = this.$store.getters.rows
+      this.col = this.$store.getters.col
     }
   },
   watch: {
     rows: {
       deep: true,
-      handler (v) {
-        this.$store.dispatch('saveRows', v)
+      handler (rows) {
+        this.$store.commit('rows', rows)
       }
+    },
+    col (col) {
+      this.$store.commit('col', col)
     }
   },
+  components: {Draggable},
   mounted () {
     this.init()
   }
@@ -114,27 +136,41 @@ export default {
 }
 
 .row {
+
   position: relative;
   margin-bottom: 1px;
-  .remove-button {
-    position: absolute;
-    top: -16px;
-    right: -16px;
-    display: none;
-    z-index: 9;
-  }
-  &:hover {
-    .remove-button {
-      display: block;
-    }
-  }
   .title {
     line-height: 24px;
     font-size: 14px;
     padding: 5px;
   }
   .content {
+    position: relative;
+    background: #FFF;
     font-size: 0;
+    .move-button {
+      position: absolute;
+      left: -12px;
+      top: -12px;
+      z-index: 9;
+      display: none;
+      cursor: move;
+    }
+    .remove-button {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      display: none;
+      z-index: 9;
+    }
+    &:hover {
+      .move-button {
+        display: block;
+      }
+      .remove-button {
+        display: block;
+      }
+    }
     .item {
       width: 60px;
       border: 1px solid #000;
@@ -158,9 +194,9 @@ export default {
           display: block;
           top: 10px;
           height: 10px;
-          border-top: 1px dotted #666;
-          border-bottom: 1px dotted #666;
-          z-index: -1;
+          border-top: 1px dotted #CCC;
+          border-bottom: 1px dotted #CCC;
+          z-index: 0;
         }
       }
       .character {
@@ -177,7 +213,7 @@ export default {
           left: 0;
           height: 0;
           border-top: 1px dotted #CCC;
-          z-index: -1;
+          z-index: 0;
         }
         &::after {
           content: '';
@@ -187,10 +223,37 @@ export default {
           left: 50%;
           height: 100%;
           border-left: 1px dotted #CCC;
-          z-index: -1;
+          z-index: 0;
         }
       }
     }
+  }
+}
+
+.drag {
+  .title {
+    display: none;
+  }
+  .row {
+    margin-bottom: 15px;
+  }
+  .row-operator {
+    display: none;
+  }
+  .ivu-btn {
+    display: none !important;
+  }
+}
+
+.sortable-drag {
+  .remove-button {
+    display: none !important;
+  }
+  .title {
+    display: none;
+  }
+  .row-operator {
+    display: none;
   }
 }
 </style>

@@ -2,6 +2,8 @@
 
 > edit and print
 
+[Demo](http://characters.vip3.3000idc.com)
+
 ## Build Setup
 
 ``` bash
